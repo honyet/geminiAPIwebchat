@@ -9,12 +9,23 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("✨ Gemini API 对话助手 (v2)")
+st.title("✨ Gemini API 对话助手 (v3)")
+
+# --- 修改部分：从 URL 获取参数 ---
+# 尝试获取 URL 中名为 'key' 的参数
+url_key = st.query_params.get("key", "")
 
 # 2. 侧边栏：配置 API Key
 with st.sidebar:
     st.header("配置")
-    api_key = st.text_input("请输入 Google Gemini API Key", type="password")
+    # 如果 URL 里有 key，则默认填充到输入框中
+    api_key = st.text_input(
+        "Google Gemini API Key", 
+        value=url_key, 
+        type="password",
+        help="你可以通过 URL ?key=你的API密钥 来自动填充"
+    )
+    
     st.markdown("[获取 Gemini API Key](https://aistudio.google.com/app/apikey)")
     
     # 模型选择
