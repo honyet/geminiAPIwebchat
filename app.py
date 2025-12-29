@@ -6,7 +6,7 @@ from google.genai import types
 st.set_page_config(
     page_title="Gemini Chat (新版SDK)",
     page_icon="✨",
-    layout="centered"
+    layout="wide"
 )
 
 st.title("✨ Gemini API 对话助手 (v3)")
@@ -110,3 +110,4 @@ if prompt := st.chat_input("输入你的问题..."):
             full_response = "抱歉，生成回答时出现了错误，请检查 API Key 或网络连接。"
     
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+
