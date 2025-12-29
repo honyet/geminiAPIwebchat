@@ -31,7 +31,7 @@ with st.sidebar:
     # 模型选择
     model_id = st.selectbox(
         "选择模型", 
-        ["gemini-3-pro-image-preview", "gemini-3-flash-preview", "gemini-3-pro-preview"],
+        ["gemini-3-flash-preview", "gemini-3-pro-preview","gemini-3-pro-image-preview" ],
         index=1
     )
     
@@ -110,4 +110,5 @@ if prompt := st.chat_input("输入你的问题..."):
             full_response = "抱歉，生成回答时出现了错误，请检查 API Key 或网络连接。"
     
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+
 
