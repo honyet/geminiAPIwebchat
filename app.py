@@ -35,7 +35,8 @@ with st.sidebar:
     model_map = {
         "Gemini 3 Pro": "gemini-3-pro-preview",
         "Gemini-3 flash": "gemini-3-flash-preview",
-        "Gemini-3-pro-image": "gemini-3-pro-image-preview",
+        "Nano Banana": "gemini-2.5-flash-image",
+        "Nano Banana Pro": "gemini-3-pro-image-preview",
     }
 
     selected_label = st.selectbox(
@@ -188,4 +189,5 @@ if prompt := st.chat_input("输入你的问题..."):
         "role": "assistant", 
         "content": full_response
     })
+
 
