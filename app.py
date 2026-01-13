@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("✨ Gemini 全能助手 (Pro & Nano)")
+st.title("✨ GeminiAPI v4 全能助手 (Pro & Nano)")
 
 # --- 从 URL 获取参数 ---
 url_key = st.query_params.get("key", "")
@@ -24,7 +24,7 @@ with st.sidebar:
         "Google Gemini API Key",
         value=url_key,
         type="password",
-        help="在 URL 后加 ?key=YOUR_KEY 可自动填入"
+        help="你可以通过 URL ?key=你的API密钥 来自动填充"
     )
     st.markdown("[获取 API Key](https://aistudio.google.com/app/apikey)")
 
@@ -33,8 +33,9 @@ with st.sidebar:
     # 模型选择 (映射用户想要的名称到真实 Model ID)
     # 注意：Gemini 3 尚未发布，这里映射到最新的 Gemini 2.0 Pro Experimental
     model_map = {
-        "Gemini 3 Pro (2.0 Pro Exp)": "gemini-2.0-pro-exp-02-05",
-        "Nano Banana (2.0 Flash)": "gemini-2.0-flash",
+        "Gemini 3 Pro": "gemini-3-pro-preview",
+        "Gemini-3 flash": "gemini-3-flash-preview",
+        "Gemini-3-pro-image": "gemini-3-pro-image-preview",
     }
 
     selected_label = st.selectbox(
@@ -187,3 +188,4 @@ if prompt := st.chat_input("输入你的问题..."):
         "role": "assistant", 
         "content": full_response
     })
+
