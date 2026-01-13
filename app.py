@@ -30,13 +30,12 @@ with st.sidebar:
 
     st.divider()
 
-    # 模型选择 (映射用户想要的名称到真实 Model ID)
-    # 注意：Gemini 3 尚未发布，这里映射到最新的 Gemini 2.0 Pro Experimental
+    # 模型选择
     model_map = {
         "Gemini 3 Pro": "gemini-3-pro-preview",
         "Gemini-3 flash": "gemini-3-flash-preview",
-        "Nano Banana": "gemini-2.5-flash-image",
-        "Nano Banana Pro": "gemini-3-pro-image-preview",
+        "Nano Banana (标准版)": "gemini-2.5-flash-image",
+        "Nano Banana Pro (增强版)": "gemini-3-pro-image-preview",
     }
 
     selected_label = st.selectbox(
@@ -45,6 +44,10 @@ with st.sidebar:
         index=0
     )
     model_id = model_map[selected_label]
+    
+    # 提示用户当前模型是否支持画图
+    if "Banana" in selected_label:
+        st.caption("ℹ️ 当前模型支持图像生成与编辑")
 
     st.divider()
 
@@ -76,27 +79,36 @@ except Exception as e:
     st.error(f"客户端初始化失败: {e}")
     st.stop()
 
-# --- 辅助函数：显示图片 ---
+# --- 辅助函数：显示内容 (增强版) ---
 def display_content(content_data, mime_type):
-    if mime_type.startswith("image/"):
-        st.image(content_data, width=300)
+    if not content_data:
+        return
+    if mime_type and mime_type.startswith("image/"):
+        st.image(content_data, width=400) # 适当放大图片宽度
     elif mime_type == "application/pdf":
-        st.caption("📄 [已上传 PDF 文件]")
+        st.caption("📄 [PDF 文件]")
     else:
-        st.caption(f"📎 [已上传文件: {mime_type}]")
+        st.caption(f"📎 [文件: {mime_type}]")
 
 # 6. 显示历史聊天记录
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        # 如果该条消息包含文件数据，先显示文件
-        if "file_data" in message and message["file_data"]:
-            display_content(message["file_data"], message["mime_type"])
-
-        # 显示文本内容
-        st.markdown(message["content"])
+        # 1. 显示用户上传的文件 (User message 里的 file_data)
+        if message.get("file_data"):
+             display_content(message["file_data"], message.get("mime_type"))
+        
+        # 2. 显示文本内容
+        if message.get("content"):
+            st.markdown(message["content"])
+            
+        # 3. 显示模型生成的图片 (Assistant message 里的 generated_images)
+        # 修复点：这里用于回显历史记录中模型生成的图片
+        if message.get("generated_images"):
+            for img_data, img_mime in message["generated_images"]:
+                st.image(img_data, caption="Generated Image", width=400)
 
 # 7. 处理用户输入
-if prompt := st.chat_input("输入你的问题..."):
+if prompt := st.chat_input("输入你的问题... (例如: 画一只在太空冲浪的猫)"):
 
     # 准备当前消息的数据结构
     current_msg = {
@@ -117,12 +129,9 @@ if prompt := st.chat_input("输入你的问题..."):
         current_msg["file_data"] = bytes_data
         current_msg["mime_type"] = mime_type
 
-        # 构建 API 请求部分 (将文件转为 Bytes Part)
+        # 构建 API 请求部分
         file_part = types.Part.from_bytes(data=bytes_data, mime_type=mime_type)
         user_parts.append(file_part)
-
-        # 提示：Streamlit 的上传器会在交互后重置，这里我们处理完就无需手动清除，
-        # 但用户下次输入如果不重新上传，就是纯文本对话。
 
     # 显示用户消息 (UI)
     with st.chat_message("user"):
@@ -136,31 +145,35 @@ if prompt := st.chat_input("输入你的问题..."):
     # 生成 AI 回复
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
-        full_response = ""
+        full_response_text = ""
+        generated_images = [] # 临时列表，用于存储本次生成的图片
 
         try:
-            # --- 构建历史记录 (转换为 Google SDK 格式) ---
+            # --- 构建历史记录 ---
             history_contents = []
-
-            # 遍历历史记录（排除刚才最新的一条，因为那是我们要发送的）
             for msg in st.session_state.messages[:-1]:
                 role = "user" if msg["role"] == "user" else "model"
                 parts = []
-
-                # 如果历史消息里有文本
-                if msg["content"]:
+                
+                # 文本
+                if msg.get("content"):
                     parts.append(types.Part.from_text(text=msg["content"]))
-
-                # 如果历史消息里有文件
-                if "file_data" in msg and msg["file_data"]:
+                
+                # 用户上传的文件
+                if msg.get("file_data"):
                     parts.append(types.Part.from_bytes(
                         data=msg["file_data"], 
                         mime_type=msg["mime_type"]
                     ))
-
-                history_contents.append(types.Content(role=role, parts=parts))
+                
+                # 暂时不将模型生成的图片放入 Context (目前上下文多模态输入主要支持用户侧)
+                # 如果需要模型基于上次生成的图修改，需要复杂的处理逻辑，这里暂略
+                
+                if parts:
+                    history_contents.append(types.Content(role=role, parts=parts))
 
             # --- 创建聊天会话 ---
+            # 如果是纯画图模型，通常不建议用 history，但为了兼容性保留
             chat = client.chats.create(
                 model=model_id,
                 history=history_contents,
@@ -169,25 +182,43 @@ if prompt := st.chat_input("输入你的问题..."):
                 )
             )
 
-            # --- 发送当前消息 (包含文本和可能的图片) ---
-            # 注意：send_message_stream 接受 str 或 list[Part]
+            # --- 发送请求 ---
             response = chat.send_message_stream(user_parts)
 
+            # --- 核心修复：处理流式响应中的图片数据 ---
             for chunk in response:
+                # 1. 处理文本
                 if chunk.text:
-                    full_response += chunk.text
-                    message_placeholder.markdown(full_response + "▌")
+                    full_response_text += chunk.text
+                    message_placeholder.markdown(full_response_text + "▌")
+                
+                # 2. 处理非文本内容 (图片)
+                # 检查 candidates 中的 parts 是否包含 inline_data
+                if chunk.candidates:
+                    for candidate in chunk.candidates:
+                        for part in candidate.content.parts:
+                            if part.inline_data:
+                                # 获取图片二进制数据和类型
+                                img_bytes = part.inline_data.data
+                                img_mime = part.inline_data.mime_type
+                                
+                                # 存入列表
+                                generated_images.append((img_bytes, img_mime))
+                                
+                                # 立即在界面显示
+                                st.image(img_bytes, caption="✨ 生成预览", width=400)
 
-            message_placeholder.markdown(full_response)
+            # 最终刷新文本（去掉光标）
+            message_placeholder.markdown(full_response_text)
 
         except Exception as e:
             st.error(f"API 请求错误: {e}")
-            full_response = "抱歉，生成回答时出现了错误。请检查 API Key、网络或模型是否支持该文件类型。"
+            full_response_text = f"错误: {str(e)}"
 
-    # 保存助手回复
+    # 保存助手回复到历史
+    # 我们增加了一个 generated_images 字段来存储图片数据
     st.session_state.messages.append({
         "role": "assistant", 
-        "content": full_response
+        "content": full_response_text,
+        "generated_images": generated_images # 保存生成的图片列表
     })
-
-
