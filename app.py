@@ -24,7 +24,7 @@ with st.sidebar:
         "Google Gemini API Key",
         value=url_key,
         type="password",
-        help="你可以通过 URL ?key=你的API密钥 来自动填充"
+        help="你可以通过 URL ?key=你的API密钥 来自动填充中转站(jeniya.cn)提供的 API Key"
     )
     st.markdown("[获取 API Key](https://aistudio.google.com/app/apikey)")
 
@@ -74,7 +74,13 @@ if not api_key:
 
 # 5. 初始化客户端
 try:
-    client = genai.Client(api_key=api_key)
+    # 修改点：添加 http_options 来指定中转站地址
+    client = genai.Client(
+        api_key=api_key,
+        http_options={
+            "base_url": "https://api.jeniya.cn"  # 填入中转站提供的 API 基础地址
+        }
+    )
 except Exception as e:
     st.error(f"客户端初始化失败: {e}")
     st.stop()
