@@ -31,16 +31,15 @@ with st.sidebar:
 
     # 模型选择
     model_map = {
+        "Gemini 3.1 Pro": "gemini-3.1-pro-preview",
         "Gemini 3 Pro": "gemini-3-pro-preview",
-        "Gemini-3 flash": "gemini-3-flash-preview",
-        "Nano Banana (标准版)": "gemini-2.5-flash-image",
-        "Nano Banana Pro (增强版)": "gemini-3-pro-image-preview",
+        "Gemini-3.1 flash lp": "gemini-3.1-flash-lite-preview",
     }
 
     selected_label = st.selectbox(
         "选择模型", 
         list(model_map.keys()),
-        index=1
+        index=2
     )
     model_id = model_map[selected_label]
 
