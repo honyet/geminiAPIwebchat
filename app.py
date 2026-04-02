@@ -10,7 +10,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("✨ GeminiAPI v4 全能助手 (Pro & Nano)")
+st.title("✨ GeminiAPI v4.1 全能助手 (Pro & Nano)中转站模式")
 
 # --- 从 URL 获取参数 ---
 url_key = st.query_params.get("key", "")
