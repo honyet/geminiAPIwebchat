@@ -39,7 +39,7 @@ with st.sidebar:
     selected_label = st.selectbox(
         "选择模型", 
         list(model_map.keys()),
-        index=2
+        index=0
     )
     model_id = model_map[selected_label]
 
