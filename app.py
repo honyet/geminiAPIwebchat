@@ -78,7 +78,7 @@ try:
     client = genai.Client(
         api_key=api_key,
         http_options={
-            "base_url": "https://jeniya.net",       # 指向中转站地址
+            "base_url": "https://quanzil.com",       # 指向中转站地址
             "headers": {
                 "Authorization": f"Bearer {api_key}" # 按要求传入 Bearer 认证头
             }
