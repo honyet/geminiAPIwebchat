@@ -40,10 +40,9 @@ with st.sidebar:
 
     # 模型选择
     model_map = {
-        "Gemini-3.5-flash-lite": "gemini-3.5-flash-lite",
+        "Gemini-3.7-flash": "gemini-3.7-flash",
         "Gemini-3.6-flash": "gemini-3.6-flash",
         "Gemini 3.1 Pro": "gemini-3.1-pro-preview",
-        "Gemini 3 Pro": "gemini-3-pro-preview",
     }
 
     selected_label = st.selectbox(
