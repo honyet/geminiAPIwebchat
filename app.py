@@ -58,11 +58,12 @@ with st.sidebar:
 
     st.divider()
 
-    # 文件上传组件
+    # 文件上传组件（支持多文件）
     st.header("📤 上传文件/图片")
-    uploaded_file = st.file_uploader(
-        "支持图片、PDF、文本等", 
+    uploaded_files = st.file_uploader(
+        "支持图片、PDF、文本等（可多选）", 
         type=['png', 'jpg', 'jpeg', 'webp', 'pdf', 'txt', 'csv', 'cs', 'c', 'cpp', 'h', 'xaml', 'xml', 'pas'],
+        accept_multiple_files=True,  # 关键修改：允许多文件上传
         key="file_uploader"
     )
 
@@ -96,12 +97,12 @@ except Exception as e:
     st.error(f"客户端初始化失败: {e}")
     st.stop()
 
-# --- 辅助函数：显示内容 (增强版) ---
+# --- 辅助函数：显示单个文件内容 ---
 def display_content(content_data, mime_type):
     if not content_data:
         return
     if mime_type and mime_type.startswith("image/"):
-        st.image(content_data, width=400) # 适当放大图片宽度
+        st.image(content_data, width=400)
     elif mime_type == "application/pdf":
         st.caption("📄 [PDF 文件]")
     else:
@@ -110,9 +111,10 @@ def display_content(content_data, mime_type):
 # 6. 显示历史聊天记录
 for message in st.session_state.messages:
     with st.chat_message(message["role"]):
-        # 1. 显示用户上传的文件
-        if message.get("file_data"):
-             display_content(message["file_data"], message.get("mime_type"))
+        # 1. 显示用户上传的文件（可能多个）
+        if message.get("files"):
+            for file_data, mime_type in message["files"]:
+                display_content(file_data, mime_type)
 
         # 2. 显示文本内容
         if message.get("content"):
@@ -130,29 +132,27 @@ if prompt := st.chat_input("输入你的问题... (例如: 画一只在太空冲
     current_msg = {
         "role": "user",
         "content": prompt,
-        "file_data": None,
-        "mime_type": None
+        "files": []  # 改为列表，存储多个文件
     }
 
-    # 处理上传的文件
+    # 构建 API 请求的 parts
     user_parts = [types.Part.from_text(text=prompt)]
 
-    if uploaded_file:
-        bytes_data = uploaded_file.getvalue()
-        mime_type = uploaded_file.type
-
-        # 保存到 session state 以便回显
-        current_msg["file_data"] = bytes_data
-        current_msg["mime_type"] = mime_type
-
-        # 构建 API 请求部分
-        file_part = types.Part.from_bytes(data=bytes_data, mime_type=mime_type)
-        user_parts.append(file_part)
+    # 处理上传的多个文件
+    if uploaded_files:
+        for uploaded_file in uploaded_files:
+            bytes_data = uploaded_file.getvalue()
+            mime_type = uploaded_file.type
+            # 保存到当前消息
+            current_msg["files"].append((bytes_data, mime_type))
+            # 添加为 API 部分
+            user_parts.append(types.Part.from_bytes(data=bytes_data, mime_type=mime_type))
 
     # 显示用户消息 (UI)
     with st.chat_message("user"):
-        if current_msg["file_data"]:
-            display_content(current_msg["file_data"], current_msg["mime_type"])
+        if current_msg["files"]:
+            for file_data, mime_type in current_msg["files"]:
+                display_content(file_data, mime_type)
         st.markdown(prompt)
 
     # 保存用户消息到历史
@@ -174,11 +174,10 @@ if prompt := st.chat_input("输入你的问题... (例如: 画一只在太空冲
                 if msg.get("content"):
                     parts.append(types.Part.from_text(text=msg["content"]))
 
-                if msg.get("file_data"):
-                    parts.append(types.Part.from_bytes(
-                        data=msg["file_data"], 
-                        mime_type=msg["mime_type"]
-                    ))
+                # 处理历史消息中的多个文件
+                if msg.get("files"):
+                    for file_data, mime_type in msg["files"]:
+                        parts.append(types.Part.from_bytes(data=file_data, mime_type=mime_type))
 
                 if parts:
                     history_contents.append(types.Content(role=role, parts=parts))
