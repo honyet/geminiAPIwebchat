@@ -28,6 +28,15 @@ with st.sidebar:
     )
 
     st.divider()
+    
+    # 查询 Key 使用量的链接
+    if api_key:
+        query_url = f"https://chaxun.tpkcur.xyz/?{api_key}"
+        st.markdown(f"[🔍 查询该 Key 使用量]({query_url})")
+    else:
+        st.caption("输入 Key 后可查询使用量")
+
+    st.divider()
 
     # 模型选择
     model_map = {
