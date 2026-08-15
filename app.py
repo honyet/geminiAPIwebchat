@@ -62,7 +62,7 @@ with st.sidebar:
     st.header("📤 上传文件/图片")
     uploaded_file = st.file_uploader(
         "支持图片、PDF、文本等", 
-        type=['png', 'jpg', 'jpeg', 'webp', 'pdf', 'txt', 'csv'],
+        type=['png', 'jpg', 'jpeg', 'webp', 'pdf', 'txt', 'csv', 'cs', 'c', 'cpp', 'h', 'xaml', 'xml', 'pas'],
         key="file_uploader"
     )
 
