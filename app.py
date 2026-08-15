@@ -223,3 +223,8 @@ if prompt := st.chat_input("输入你的问题... (例如: 画一只在太空冲
         "content": full_response_text,
         "generated_images": generated_images
     })
+    
+    # === 清空文件上传列表 ===
+    if "file_uploader" in st.session_state:
+        del st.session_state["file_uploader"]
+    st.rerun()
