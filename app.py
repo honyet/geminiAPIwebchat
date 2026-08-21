@@ -203,15 +203,21 @@ if prompt := st.chat_input("输入你的问题... (例如: 画一只在太空冲
                 # 处理非文本内容 (图片)
                 if chunk.candidates:
                     for candidate in chunk.candidates:
-                        for part in candidate.content.parts:
-                            if part.inline_data:
-                                img_bytes = part.inline_data.data
-                                img_mime = part.inline_data.mime_type
-                                generated_images.append((img_bytes, img_mime))
-                                st.image(img_bytes, caption="✨ 生成预览", width=400)
+                        # 👇 增加判断：确保 content 和 parts 都存在
+                        if candidate.content and candidate.content.parts: 
+                            for part in candidate.content.parts:
+                                if part.inline_data:
+                                    img_bytes = part.inline_data.data
+                                    img_mime = part.inline_data.mime_type
+                                    generated_images.append((img_bytes, img_mime))
+                                    st.image(img_bytes, caption="✨ 生成预览", width=400)
 
             # 最终刷新文本
-            message_placeholder.markdown(full_response_text)
+            if full_response_text:
+                message_placeholder.markdown(full_response_text)
+            else:
+                full_response_text = "⚠️ 抱歉，AI 拒绝了回答或未返回有效文本（可能触发了安全审查）。"
+                message_placeholder.markdown(full_response_text)
 
         except Exception as e:
             st.error(f"API 请求错误: {e}")
